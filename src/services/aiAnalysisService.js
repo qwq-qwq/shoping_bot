@@ -28,7 +28,7 @@ async function analyzeScreenshot(screenshotPath, item) {
     const prompt = `Analyze this screenshot of a product page from an online store.
 1. Is the product available for purchase?
 2. What sizes are available? The target sizes I'm looking for are: ${item.sizes.join(', ')}
-3. What is the price of the product?
+3. What is the price of the product biggest font on top of the page in UAH?
 4. Are there any "out of stock" or "not available" messages?
 
 Please respond in JSON format with the following structure:
