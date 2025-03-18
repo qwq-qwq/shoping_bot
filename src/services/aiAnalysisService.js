@@ -65,7 +65,7 @@ Please respond in JSON format with the following structure:
               ]
             }
           ],
-          max_tokens: 5000
+          max_tokens: 1000
         },
         {
           headers: {
