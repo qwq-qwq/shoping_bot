@@ -25,7 +25,7 @@ async function monitorProducts() {
         // Construct product URL for notification
         const shopConfig = config.shops.find(s => s.name === item.shop);
         // The productId now contains the full path after the domain
-        const productUrl = `${shopConfig.url}/${item.productId}.html`;
+        const productUrl = `${shopConfig.url}/${item.productId}`;
         
         await sendNotification(
           `✅ Product available: ${item.name} (${item.shop})`,

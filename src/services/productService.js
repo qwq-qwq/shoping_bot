@@ -25,7 +25,7 @@ async function checkProductAvailability(browser, item) {
     
     // Construct product URL
     // The productId now contains the full path after the domain
-    const productUrl = `${shopConfig.url}/${item.productId}.html`;
+    const productUrl = `${shopConfig.url}/${item.productId}`;
     
     logger.info(`Loading page: ${productUrl}`);
     await page.goto(productUrl, { waitUntil: 'networkidle2', timeout: 30000 });
@@ -40,6 +40,7 @@ async function checkProductAvailability(browser, item) {
     const isProductPage = await page.evaluate(() => {
       return !!document.querySelector('.product-detail-view__main-info') || 
              !!document.querySelector('.product-info') ||
+             !!document.querySelector('.bs-detail-content') ||
              !!document.querySelector('.product-detail-size-selector-std__wrapper') ||
              !!document.querySelector('.new-size-selector') ||
              !!document.querySelector('.product-detail-view_main-content') ||

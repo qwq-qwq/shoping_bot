@@ -31,30 +31,38 @@ module.exports = {
   ],
   // Target items to monitor
   targetItems: [
-    {
-      shop: 'Zara',
-      name: 'КУРТКА-БОМБЕР SOFT З ЕЛАСТИЧНОЮ ОКАНТОВКОЮ',
-      productId: 'ua/uk/-к-у-р-т-к-а---б-о-м-б-е-р---s-o-f-t---з---е-л-а-с-т-и-ч-н-о-ю---о-к-а-н-т-о-в-к-о-ю--p03046274',
-      sizes: ['XS', 'S', 'M', 'L', 'XL'],
-      maxPrice: 1500,
-      autoPurchase: false
-    },
-    {
-      shop: 'Zara',
-      name: 'Замшеві мюлі на підборах кітен хіл',
-      productId: 'ua/uk/-з-а-м-ш-е-в-і---м-ю-л-і---н-а---п-і-д-б-о-р-а-х---к-і-т-е-н---х-і-л--p11219510',
-      sizes: ['36', '37', '38'],
-      maxPrice: 2990,
-      autoPurchase: false
-    },
+    // {
+    //   shop: 'Zara',
+    //   name: 'КУРТКА-БОМБЕР SOFT З ЕЛАСТИЧНОЮ ОКАНТОВКОЮ',
+    //   productId: 'ua/uk/-к-у-р-т-к-а---б-о-м-б-е-р---s-o-f-t---з---е-л-а-с-т-и-ч-н-о-ю---о-к-а-н-т-о-в-к-о-ю--p03046274.html',
+    //   sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    //   maxPrice: 1500,
+    //   autoPurchase: false
+    // },
+    // {
+    //   shop: 'Zara',
+    //   name: 'Замшеві мюлі на підборах кітен хіл',
+    //   productId: 'ua/uk/-з-а-м-ш-е-в-і---м-ю-л-і---н-а---п-і-д-б-о-р-а-х---к-і-т-е-н---х-і-л--p11219510.html',
+    //   sizes: ['36', '37', '38'],
+    //   maxPrice: 2990,
+    //   autoPurchase: false
+    // },
    {
       shop: 'Massimo Dutti',
       name: 'Кожаная куртка',
       productId: 'ua/nappa-leather-jacket-l03320568',
       sizes: ['XXL'],
-      maxPrice: 8000,
+      maxPrice: 15000,
       autoPurchase: false
-    } 
+    },
+    {
+      shop: 'Massimo Dutti',
+      name: 'Пиджак из текстиля',
+      productId: 'ua/textured-linen-blend-blazer-l02032279?pelement=48134930',
+      sizes: ['58'],
+      maxPrice: 5000,
+      autoPurchase: false
+    }
   ],
   // Email notification settings
   email: {

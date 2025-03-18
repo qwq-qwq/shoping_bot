@@ -10,6 +10,31 @@ const logger = require('../utils/logger');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
+ * Deletes screenshots older than 3 days
+ * @param {string} screenshotDir - Directory containing screenshots
+ * @returns {Promise<void>}
+ */
+async function cleanupOldScreenshots(screenshotDir) {
+  try {
+    const files = await fs.readdir(screenshotDir);
+    const now = Date.now();
+    const threeDaysAgo = now - (1 * 24 * 60 * 60 * 1000); // 1 day in milliseconds
+    
+    for (const file of files) {
+      const filePath = path.join(screenshotDir, file);
+      const stats = await fs.stat(filePath);
+      
+      if (stats.mtimeMs < threeDaysAgo) {
+        await fs.unlink(filePath);
+        logger.info(`Deleted old screenshot: ${file}`);
+      }
+    }
+  } catch (error) {
+    logger.error(`Error cleaning up old screenshots: ${error.message}`);
+  }
+}
+
+/**
  * Saves a screenshot from a Puppeteer page
  * @param {import('puppeteer').Page} page - Puppeteer page object
  * @param {string} filename - Base filename for the screenshot
@@ -20,6 +45,9 @@ async function saveScreenshot(page, filename) {
   
   try {
     await fs.mkdir(screenshotDir, { recursive: true });
+    
+    // Очищаем старые скриншоты перед созданием нового
+    await cleanupOldScreenshots(screenshotDir);
     
     // Проверяем наличие кнопки добавления в корзину
     const addButton = await page.evaluate(() => {
