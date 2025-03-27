@@ -45,13 +45,6 @@ pipeline {
 
         stage('Prepare Environment') {
             steps {
-                // Копируем соответствующий docker-compose файл, если он существует
-                script {
-                    if (fileExists("docker-compose.${params.ENVIRONMENT}.yml")) {
-                        sh "cp docker-compose.${params.ENVIRONMENT}.yml docker-compose.yml"
-                        echo "Using ${params.ENVIRONMENT} specific docker-compose file"
-                    }
-                }
 
                 // Создаем или обновляем .env файл
                 sh '''
@@ -65,6 +58,14 @@ pipeline {
                     sed -i "s/HEADLESS=.*/HEADLESS=true/" .env
                 fi
                 '''
+
+                // Копируем соответствующий docker-compose файл, если он существует
+                script {
+                    if (fileExists("docker-compose.${params.ENVIRONMENT}.yml")) {
+                        sh "cp docker-compose.${params.ENVIRONMENT}.yml docker-compose.yml"
+                        echo "Using ${params.ENVIRONMENT} specific docker-compose file"
+                    }
+                }
                 
                 echo 'Environment preparation completed'
             }
