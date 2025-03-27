@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  shopping-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopping-bot-dev
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+      - ./logs:/app/logs
+      - ./screenshots:/app/screenshots
+      - ./.env:/app/.env
+    environment:
+      - TZ=Europe/Kiev
+      - NODE_ENV=development
+      - DEBUG=true
+    networks:
+      - traefik_web-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:alpine
+    container_name: shopping-bot-nginx-dev
+    restart: unless-stopped
+    volumes:
+      - ./html:/usr/share/nginx/html
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - shopping-bot_logs:/var/log/nginx
+    networks:
+      - traefik_web-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.shopping-bot-dev.rule=Host(`dev.shopping-bot.perek.rest`)"
+      - "traefik.http.routers.shopping-bot-dev.entrypoints=websecure"
+      - "traefik.http.routers.shopping-bot-dev.tls=true"
+      - "traefik.http.routers.shopping-bot-dev.tls.certresolver=myresolver"
+      - "traefik.http.services.shopping-bot-dev.loadbalancer.server.port=80"
+    depends_on:
+      - shopping-bot
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  shopping-bot_logs:
+
+networks:
+  traefik_web-network:
+    external: true

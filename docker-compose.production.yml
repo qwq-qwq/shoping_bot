@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  shopping-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopping-bot-prod
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+      - ./logs:/app/logs
+      - ./screenshots:/app/screenshots
+      - ./.env:/app/.env
+    environment:
+      - TZ=Europe/Kiev
+      - NODE_ENV=production
+    networks:
+      - traefik_web-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  nginx:
+    image: nginx:alpine
+    container_name: shopping-bot-nginx-prod
+    restart: unless-stopped
+    volumes:
+      - ./html:/usr/share/nginx/html
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - shopping-bot_logs:/var/log/nginx
+    networks:
+      - traefik_web-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.shopping-bot.rule=Host(`shopping-bot.perek.rest`)"
+      - "traefik.http.routers.shopping-bot.entrypoints=websecure"
+      - "traefik.http.routers.shopping-bot.tls=true"
+      - "traefik.http.routers.shopping-bot.tls.certresolver=myresolver"
+      - "traefik.http.services.shopping-bot.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.shopping-bot-security.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.shopping-bot-security.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.shopping-bot-security.headers.stsPreload=true"
+      - "traefik.http.routers.shopping-bot.middlewares=shopping-bot-security"
+    depends_on:
+      - shopping-bot
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  shopping-bot_logs:
+
+networks:
+  traefik_web-network:
+    external: true
