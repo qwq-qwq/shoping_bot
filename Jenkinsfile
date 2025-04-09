@@ -54,7 +54,7 @@ pipeline {
 
                     sed -i "s/OPENAI_API_KEY=.*/OPENAI_API_KEY=${OPENAI_API_KEY}/" .env
                     sed -i "s/EMAIL_PASSWORD=.*/EMAIL_PASSWORD=${EMAIL_PASSWORD}/" .env
-                    sed -i "s/CHECK_INTERVAL=.*/CHECK_INTERVAL=\"*\/30 * * * *\"/" .env
+                    sed -i 's/CHECK_INTERVAL=.*/CHECK_INTERVAL="*\/30 * * * *"/' .env
                     sed -i "s/HEADLESS=.*/HEADLESS=true/" .env
                 fi
                 '''
