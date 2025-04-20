@@ -82,7 +82,6 @@ pipeline {
                    // Копируем необходимые файлы в директорию деплоя
                    sh "cp docker-compose.yml ${env.APP_DIR}/"
                    sh "cp .env ${env.APP_DIR}/"
-                   sh
 
                    // Создаем метку версии
                    sh "echo 'BUILD_ID=${env.BUILD_ID}\nBUILD_NUMBER=${env.BUILD_NUMBER}\nGIT_COMMIT=${env.GIT_COMMIT_SHORT}\nBUILD_TIMESTAMP=${env.BUILD_TIMESTAMP}' > ${env.APP_DIR}/version.txt"
