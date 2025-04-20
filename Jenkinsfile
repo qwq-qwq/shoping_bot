@@ -90,8 +90,16 @@ pipeline {
         
         stage('Build') {
             steps {
-                sh 'docker-compose build'
-                echo 'Docker build completed'
+              dir("${env.APP_DIR}") {
+                    // Останавливаем предыдущие контейнеры если они есть
+                    sh 'docker-compose down || true'
+
+                    // Обновляем версию образа в docker-compose.yml
+                    sh "sed -i 's|image: ${env.APP_NAME}:[^[:space:]]*|image: ${env.APP_NAME}:${env.BUILD_NUMBER}|g' docker-compose.yml"
+
+                    // Запускаем контейнеры
+                    sh 'docker-compose up -d'
+               }
             }
         }
         
@@ -111,18 +119,20 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'docker-compose down || true'
-                sh 'docker-compose up -d'
+                dir("${env.APP_DIR}") {
+                    sh 'docker-compose down || true'
+                    sh 'docker-compose up -d'
 
-                // Дополнительные команды для разных сред
-                script {
-                    if (params.ENVIRONMENT == 'production') {
-                        echo "Deployed to production environment at https://${params.DOMAIN_NAME}"
-                    } else if (params.ENVIRONMENT == 'staging') {
-                        echo "Deployed to staging environment at https://${params.DOMAIN_NAME}"
-                    } else {
-                        echo "Deployed to development environment at https://${params.DOMAIN_NAME}"
-                    }
+                    // Дополнительные команды для разных сред
+                    script {
+                       if (params.ENVIRONMENT == 'production') {
+                            echo "Deployed to production environment at https://${params.DOMAIN_NAME}"
+                       } else if (params.ENVIRONMENT == 'staging') {
+                            echo "Deployed to staging environment at https://${params.DOMAIN_NAME}"
+                       } else {
+                            echo "Deployed to development environment at https://${params.DOMAIN_NAME}"
+                       }
+                   }
                 }
             }
         }
