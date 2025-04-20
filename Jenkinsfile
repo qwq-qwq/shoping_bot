@@ -15,6 +15,7 @@ pipeline {
 
         OPENAI_API_KEY = credentials('openai-api-key')
         EMAIL_PASSWORD = credentials('email-password')
+        APP_DIR = "/opt/projects/shopping-bot"
     }
     
     stages {
@@ -69,6 +70,23 @@ pipeline {
                 
                 echo 'Environment preparation completed'
             }
+        }
+
+        stage('Prepare Deployment') {
+              steps {
+                   sh "mkdir -p ${env.APP_DIR}/config ${env.APP_DIR}/logs ${env.APP_DIR}/screenshots ${env.APP_DIR}/nginx/conf.d"
+
+                   // Копируем конфигурации nginx
+                   sh "cp -r nginx/conf.d/* ${env.APP_DIR}/nginx/conf.d/"
+
+                   // Копируем необходимые файлы в директорию деплоя
+                   sh "cp docker-compose.yml ${env.APP_DIR}/"
+                   sh "cp .env ${env.APP_DIR}/"
+                   sh
+
+                   // Создаем метку версии
+                   sh "echo 'BUILD_ID=${env.BUILD_ID}\nBUILD_NUMBER=${env.BUILD_NUMBER}\nGIT_COMMIT=${env.GIT_COMMIT_SHORT}\nBUILD_TIMESTAMP=${env.BUILD_TIMESTAMP}' > ${env.APP_DIR}/version.txt"
+              }
         }
         
         stage('Build') {
