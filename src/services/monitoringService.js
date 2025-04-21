@@ -32,58 +32,119 @@ async function monitorProducts() {
     // Добавляем небольшую паузу после запуска браузера
     await new Promise(resolve => setTimeout(resolve, 5000));
     
+    // Импортируем утилиту проверки доступности сайтов
+    const { checkSiteAvailability } = require('../utils/siteAvailabilityChecker');
+    
+    // Группируем товары по магазинам
+    const productsByShop = {};
     for (const item of config.targetItems) {
-      let result = null;
-      let retryCount = 0;
+      if (!productsByShop[item.shop]) {
+        productsByShop[item.shop] = [];
+      }
+      productsByShop[item.shop].push(item);
+    }
+    
+    // Проверяем каждый магазин и его товары
+    for (const [shopName, shopItems] of Object.entries(productsByShop)) {
+      const shopConfig = config.shops.find(s => s.name === shopName);
       
-      // Добавляем механизм повторных попыток с экспоненциальной задержкой
-      while (retryCount < maxRetries) {
+      if (!shopConfig) {
+        logger.error(`Configuration for shop ${shopName} not found`);
+        continue;
+      }
+      
+      // Проверяем доступность магазина перед проверкой товаров
+      const siteCheck = await checkSiteAvailability(browser, shopConfig.url, shopName);
+      
+      if (!siteCheck.available) {
+        logger.error(`Shop ${shopName} is not available: ${siteCheck.reason}`);
+        
+        // Добавляем статусы всех товаров из недоступного магазина как "недоступные"
+        for (const item of shopItems) {
+          productStatuses.push({
+            name: item.name,
+            shop: item.shop,
+            sizes: item.sizes,
+            maxPrice: item.maxPrice,
+            available: false,
+            price: null,
+            availableSizes: [],
+            error: `Магазин недоступен: ${siteCheck.reason}`,
+            lastChecked: new Date().toISOString()
+          });
+        }
+        
+        // Отправляем уведомление о недоступности магазина
         try {
-          // Если это не первая попытка, делаем дополнительную паузу
-          if (retryCount > 0) {
-            const waitTime = Math.pow(2, retryCount) * 5000; // 10, 20, 40 секунд
-            logger.info(`Retry attempt ${retryCount}. Waiting ${waitTime/1000} seconds...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-          }
-          
-          result = await checkProductAvailability(browser, item);
-          
-          // Если успешно получили результат, выходим из цикла
-          if (result) break;
-          
-        } catch (error) {
-          logger.warn(`Attempt ${retryCount + 1} failed for ${item.name}: ${error.message}`);
-          
-          // Если это таймаут или ошибка соединения, увеличиваем счетчик
-          if (error.message.includes('timeout') || 
-              error.message.includes('connection') ||
-              error.message.includes('network')) {
-            connectionIssuesCount++;
-          }
-          
-          // Пересоздаем браузер при сетевых проблемах
-          if (retryCount === 1 && browser) {
-            logger.info('Recreating browser instance due to connection issues...');
-            try {
-              await browser.close();
-            } catch (e) {
-              logger.error(`Error closing browser: ${e.message}`);
+          await sendNotification(
+            `⚠️ Магазин ${shopName} недоступен`,
+            `
+              <p><strong>Причина:</strong> ${siteCheck.reason}</p>
+              <p>Пропущена проверка ${shopItems.length} товаров.</p>
+              <p>Следующая попытка будет выполнена по расписанию.</p>
+            `
+          );
+        } catch (notifError) {
+          logger.error(`Failed to send notification: ${notifError.message}`);
+        }
+        
+        // Пропускаем проверку товаров для этого магазина
+        continue;
+      }
+      
+      // Если магазин доступен, проверяем его товары
+      for (const item of shopItems) {
+        let result = null;
+        let retryCount = 0;
+        
+        // Добавляем механизм повторных попыток с экспоненциальной задержкой
+        while (retryCount < maxRetries) {
+          try {
+            // Если это не первая попытка, делаем дополнительную паузу
+            if (retryCount > 0) {
+              const waitTime = Math.pow(2, retryCount) * 5000; // 10, 20, 40 секунд
+              logger.info(`Retry attempt ${retryCount}. Waiting ${waitTime/1000} seconds...`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
             }
-            await new Promise(resolve => setTimeout(resolve, 10000)); // Ждем 10 секунд
-            browser = await launchBrowser();
-          }
-          
-          retryCount++;
-          
-          // Если все попытки исчерпаны, устанавливаем результат с ошибкой
-          if (retryCount >= maxRetries) {
-            result = { 
-              available: false, 
-              error: `Failed after ${maxRetries} attempts: ${error.message}`
-            };
+            
+            result = await checkProductAvailability(browser, item);
+            
+            // Если успешно получили результат, выходим из цикла
+            if (result) break;
+            
+          } catch (error) {
+            logger.warn(`Attempt ${retryCount + 1} failed for ${item.name}: ${error.message}`);
+            
+            // Если это таймаут или ошибка соединения, увеличиваем счетчик
+            if (error.message.includes('timeout') || 
+                error.message.includes('connection') ||
+                error.message.includes('network')) {
+              connectionIssuesCount++;
+            }
+            
+            // Пересоздаем браузер при сетевых проблемах
+            if (retryCount === 1 && browser) {
+              logger.info('Recreating browser instance due to connection issues...');
+              try {
+                await browser.close();
+              } catch (e) {
+                logger.error(`Error closing browser: ${e.message}`);
+              }
+              await new Promise(resolve => setTimeout(resolve, 10000)); // Ждем 10 секунд
+              browser = await launchBrowser();
+            }
+            
+            retryCount++;
+            
+            // Если все попытки исчерпаны, устанавливаем результат с ошибкой
+            if (retryCount >= maxRetries) {
+              result = { 
+                available: false, 
+                error: `Failed after ${maxRetries} attempts: ${error.message}`
+              };
+            }
           }
         }
-      }
       
       // Сохраняем статус продукта для веб-интерфейса
       productStatuses.push({
@@ -150,6 +211,7 @@ async function monitorProducts() {
       const randomPause = 5000 + Math.floor(Math.random() * 10000); // от 5 до 15 секунд
       logger.info(`Pausing for ${randomPause/1000} seconds before checking next product...`);
       await new Promise(resolve => setTimeout(resolve, randomPause));
+      }
     }
     
     // Проверяем, были ли проблемы с подключением
