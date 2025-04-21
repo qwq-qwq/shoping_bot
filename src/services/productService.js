@@ -3,7 +3,8 @@ const logger = require('../utils/logger');
 const { acceptCookies } = require('./browserService');
 const { saveScreenshot } = require('./screenshotService');
 const { analyzeScreenshot } = require('./aiAnalysisService');
-const { randomDelay, simulateHumanBrowsing } = require('../utils/antiDetectionUtils');
+// Более простая версия антидетект функций
+const { randomDelay } = require('../utils/antiDetectionUtils');
 
 /**
  * Checks availability of a product
@@ -21,9 +22,18 @@ async function checkProductAvailability(browser, item) {
   
   const page = await browser.newPage();
   
-  // Применяем антидетект настройки
-  const { setupAntiDetection } = require('../utils/antiDetectionUtils');
-  await setupAntiDetection(page);
+  // Применяем антидетект настройки с меньшим количеством Javascript
+  await page.evaluateOnNewDocument(() => {
+    // Скрытие работы в режиме Headless
+    Object.defineProperty(navigator, 'webdriver', {
+      get: () => false
+    });
+    
+    // Скрытие присутствия Automation
+    Object.defineProperty(navigator, 'plugins', {
+      get: () => [1, 2, 3, 4, 5]
+    });
+  });
   
   try {
     logger.info(`Checking product ${item.name} in ${item.shop}...`);
@@ -34,10 +44,13 @@ async function checkProductAvailability(browser, item) {
     
     logger.info(`Loading page: ${productUrl}`);
     
-    // Устанавливаем случайный заголовок referer
+    // Создаем новый файл с настройками для хранения детальных настроек анти-детекта
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36');
+    
+    // Устанавливаем дополнительные заголовки для более естественного поведения
     await page.setExtraHTTPHeaders({
-      'Referer': shopConfig.url,
-      'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+      'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Referer': shopConfig.url
     });
     
     // Увеличиваем таймаут до 60 секунд
@@ -47,13 +60,16 @@ async function checkProductAvailability(browser, item) {
     });
     
     // Случайная задержка перед дальнейшими действиями
-    await randomDelay(2000, 5000);
+    await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
     
     // Accept cookies if they appear
     await acceptCookies(page, shopConfig);
     
-    // Имитируем человеческое поведение на странице
-    await simulateHumanBrowsing(page);
+    // Добавим простую эмуляцию скроллинга без сложного кода
+    await page.evaluate(() => {
+      window.scrollBy(0, 300);
+      setTimeout(() => window.scrollBy(0, 300), 500);
+    });
     
     // Take a screenshot of the page for AI analysis
     const screenshotPath = await saveScreenshot(page, `page-loaded-${item.name}`);

@@ -1,7 +1,8 @@
 const puppeteer = require('puppeteer');
 const config = require('../../config/default');
 const logger = require('../utils/logger');
-const { getRandomUserAgent } = require('../utils/antiDetectionUtils');
+// Используем упрощенную версию
+const { getRandomUserAgent } = require('../utils/antiDetectionUtils.simple');
 // const { applyProxy } = require('../utils/rotateProxy'); // Раскомментировать, если нужны прокси
 
 /**
@@ -30,7 +31,8 @@ async function launchBrowser() {
         '--lang=ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
       ],
       ignoreHTTPSErrors: true,
-      timeout: 60000
+      timeout: 60000,
+      protocolTimeout: 180000 // Увеличиваем таймаут протокола до 3 минут
     };
     
     // Применяем прокси, если нужно
