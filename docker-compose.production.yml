@@ -9,6 +9,7 @@ services:
       - ./config:/app/config
       - ./logs:/app/logs
       - ./screenshots:/app/screenshots
+      - ./status:/app/status
       - ./.env:/app/.env
     environment:
       - TZ=Europe/Kiev
@@ -34,6 +35,8 @@ services:
       - ./html:/usr/share/nginx/html
       - ./nginx/conf.d:/etc/nginx/conf.d
       - shopping-bot_logs:/var/log/nginx
+      - ./screenshots:/usr/share/nginx/html/screenshots:ro
+      - ./status:/usr/share/nginx/html/status
     networks:
       - traefik_web-network
     labels:

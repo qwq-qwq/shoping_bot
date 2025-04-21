@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * Загружает данные о статусе бота и обновляет интерфейс
  */
 function loadStatus() {
-  fetch('status.json?' + new Date().getTime())
+  fetch('status/status.json?' + new Date().getTime())
     .then(response => {
       if (!response.ok) {
         throw new Error('Статус недоступен');

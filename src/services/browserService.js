@@ -31,8 +31,8 @@ async function launchBrowser() {
         '--lang=ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
       ],
       ignoreHTTPSErrors: true,
-      timeout: 60000,
-      protocolTimeout: 180000 // Увеличиваем таймаут протокола до 3 минут
+      timeout: 120000,
+      protocolTimeout: 300000 // Увеличиваем до 5 минут
     };
     
     // Применяем прокси, если нужно
