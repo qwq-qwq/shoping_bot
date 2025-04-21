@@ -53,6 +53,8 @@ pipeline {
                     echo "Creating .env file from example"
                     cp .env.example .env
 
+                    sed -i "s/EMAIL_FROM=.*/EMAIL_FROM=mail.bot.perek@gmail.com/" .env
+                    sed -i "s/EMAIL_TO=.*/EMAIL_TO=sergey@perek.rest/" .env
                     sed -i "s/OPENAI_API_KEY=.*/OPENAI_API_KEY=${OPENAI_API_KEY}/" .env
                     sed -i "s/EMAIL_PASSWORD=.*/EMAIL_PASSWORD=${EMAIL_PASSWORD}/" .env
                     sed -i 's|CHECK_INTERVAL=.*|CHECK_INTERVAL="*/30 * * * *"|' .env
