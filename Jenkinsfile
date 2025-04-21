@@ -146,7 +146,7 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh 'docker-compose ps'
-                sh 'sleep 15' // Даем больше времени для запуска
+                sh 'sleep 25' // Даем больше времени для запуска
                 sh 'docker-compose logs --tail=100'
 
                 script {
