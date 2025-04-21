@@ -80,6 +80,10 @@ pipeline {
                    sh "cp -r nginx/conf.d/* ${env.APP_DIR}/nginx/conf.d/"
 
                    // Копируем необходимые файлы в директорию деплоя
+                   sh "cp -r config/* ${env.APP_DIR}/config/"
+                   sh "cp -r html/* ${env.APP_DIR}/html/"
+                   sh "cp -r src/* ${env.APP_DIR}/src/"
+                   sh "cp package*.json ${env.APP_DIR}/"
                    sh "cp Dockerfile ${env.APP_DIR}/"
                    sh "cp docker-compose.yml ${env.APP_DIR}/"
                    sh "cp .env ${env.APP_DIR}/"
