@@ -145,21 +145,23 @@ pipeline {
         
         stage('Health Check') {
             steps {
-                sh 'docker-compose ps'
-                sh 'sleep 25' // Даем больше времени для запуска
-                sh 'docker-compose logs --tail=100'
+                dir("${env.APP_DIR}") {
+                    sh 'docker-compose ps'
+                    sh 'sleep 15' // Даем больше времени для запуска
+                    sh 'docker-compose logs --tail=100'
 
-                script {
-                    def containers = sh(script: 'docker-compose ps -q', returnStdout: true).trim()
-                
-                    if (containers) {
-                        echo 'Containers are running'
-                    } else {
-                        error 'No containers running after deployment!'
+                    script {
+                        def containers = sh(script: 'docker-compose ps -q', returnStdout: true).trim()
+                    
+                        if (containers) {
+                            echo 'Containers are running'
+                        } else {
+                            error 'No containers running after deployment!'
+                        }
                     }
+                    
+                    echo 'Health check completed'
                 }
-                
-                echo 'Health check completed'
             }
         }
 
