@@ -49,7 +49,6 @@ pipeline {
 
                 // Создаем или обновляем .env файл
                 sh '''
-                if [ ! -f .env ]; then
                     echo "Creating .env file from example"
                     cp .env.example .env
 
@@ -59,7 +58,6 @@ pipeline {
                     sed -i "s/EMAIL_PASSWORD=.*/EMAIL_PASSWORD=${EMAIL_PASSWORD}/" .env
                     sed -i 's|CHECK_INTERVAL=.*|CHECK_INTERVAL="*/30 * * * *"|' .env
                     sed -i "s/HEADLESS=.*/HEADLESS=true/" .env
-                fi
                 '''
 
                 // Копируем соответствующий docker-compose файл, если он существует
