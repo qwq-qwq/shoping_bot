@@ -170,11 +170,13 @@ pipeline {
                 expression { return params.CLEANUP_IMAGES }
             }
             steps {
-                echo 'Remove .env'
-                sh 'rm -f .env'
-                echo 'Cleaning up unused Docker images...'
-                sh 'docker system prune -f --volumes'
-                echo 'Cleanup completed'
+                dir("${env.APP_DIR}") {
+                    echo 'Remove .env'
+                    sh 'rm -f .env'
+                    echo 'Cleaning up unused Docker images...'
+                    sh 'docker system prune -f --volumes'
+                    echo 'Cleanup completed'
+                }
             }
         }
     }
