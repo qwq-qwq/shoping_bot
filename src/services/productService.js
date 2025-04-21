@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const { acceptCookies } = require('./browserService');
 const { saveScreenshot } = require('./screenshotService');
 const { analyzeScreenshot } = require('./aiAnalysisService');
+const { randomDelay, simulateHumanBrowsing } = require('../utils/antiDetectionUtils');
 
 /**
  * Checks availability of a product
@@ -20,6 +21,10 @@ async function checkProductAvailability(browser, item) {
   
   const page = await browser.newPage();
   
+  // Применяем антидетект настройки
+  const { setupAntiDetection } = require('../utils/antiDetectionUtils');
+  await setupAntiDetection(page);
+  
   try {
     logger.info(`Checking product ${item.name} in ${item.shop}...`);
     
@@ -28,10 +33,27 @@ async function checkProductAvailability(browser, item) {
     const productUrl = `${shopConfig.url}/${item.productId}`;
     
     logger.info(`Loading page: ${productUrl}`);
-    await page.goto(productUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+    
+    // Устанавливаем случайный заголовок referer
+    await page.setExtraHTTPHeaders({
+      'Referer': shopConfig.url,
+      'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+    });
+    
+    // Увеличиваем таймаут до 60 секунд
+    await page.goto(productUrl, { 
+      waitUntil: 'networkidle2', 
+      timeout: 60000 
+    });
+    
+    // Случайная задержка перед дальнейшими действиями
+    await randomDelay(2000, 5000);
     
     // Accept cookies if they appear
     await acceptCookies(page, shopConfig);
+    
+    // Имитируем человеческое поведение на странице
+    await simulateHumanBrowsing(page);
     
     // Take a screenshot of the page for AI analysis
     const screenshotPath = await saveScreenshot(page, `page-loaded-${item.name}`);

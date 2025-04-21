@@ -1,134 +1,114 @@
 # Shopping Bot
 
-A Node.js bot for monitoring product availability in online stores and sending notifications when products become available.
+Бот для мониторинга наличия товаров в онлайн-магазинах и отправки уведомлений при их появлении.
 
-## Features
+## Функциональность
 
-- 🔍 **Product Monitoring**: Automatically checks for product availability
-- 💰 **Price Tracking**: Verifies if products are below a maximum price threshold
-- 👕 **Size Availability**: Checks if specific sizes are available
-- 📧 **Email Notifications**: Sends alerts when products become available
-- 📸 **Screenshot Capture**: Takes screenshots for verification and debugging
-- ⏱️ **Scheduled Checks**: Uses cron to run checks at regular intervals
-- 🤖 **AI Analysis**: Uses OpenAI's Vision API to analyze product pages from screenshots
+- Мониторинг товаров в интернет-магазинах (Zara, Massimo Dutti и др.)
+- Проверка наличия товаров по заданным размерам
+- Отправка уведомлений по электронной почте
+- Сохранение скриншотов для визуального подтверждения
+- Веб-интерфейс для мониторинга статуса товаров
+- Защита от обнаружения ботов
 
-## Supported Stores
+## Установка
 
-- Zara
-- Massimo Dutti
-- *(Easily extendable to other stores)*
+### С использованием Docker (рекомендуется)
 
-## Prerequisites
-
-- Node.js (v14 or higher)
-- npm or yarn
-- Gmail account for sending notifications (or modify for other email providers)
-- OpenAI API key (for AI analysis feature)
-
-## Installation
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/shopping-bot.git
-   cd shopping-bot
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   ```
-
-3. Create a `.env` file based on the `.env.example`:
-   ```
-   cp .env.example .env
-   ```
-
-4. Edit the `.env` file with your credentials and settings.
-
-## Configuration
-
-### Environment Variables
-
-Configure the following in your `.env` file:
-
-- `EMAIL_ENABLED`: Set to `true` to enable email notifications
-- `EMAIL_FROM`: Your Gmail address
-- `EMAIL_TO`: Email address to receive notifications
-- `EMAIL_PASSWORD`: Your Gmail app password (not your regular password)
-- `CHECK_INTERVAL`: Cron schedule for checks (default: every 30 minutes)
-- `HEADLESS`: Set to `true` for headless browser mode
-- Store credentials for each supported store
-- `OPENAI_API_KEY`: Your OpenAI API key for AI analysis (optional)
-
-### Product Configuration
-
-Edit `config/default.js` to configure the products you want to monitor:
-
-```javascript
-targetItems: [
-  {
-    shop: 'Zara',
-    name: 'Product Name',
-    productId: '1234/567', // Product ID from URL
-    sizes: ['S', 'M'],     // Desired sizes
-    maxPrice: 9990,        // Maximum price
-    autoPurchase: false    // Auto-purchase when available (not implemented yet)
-  },
-  // Add more products...
-]
+1. Клонируйте репозиторий:
+```
+git clone https://github.com/your-username/shopping-bot.git
+cd shopping-bot
 ```
 
-## Usage
+2. Создайте .env файл на основе .env.example:
+```
+cp .env.example .env
+```
 
-Start the bot:
+3. Отредактируйте .env файл, указав ваши учетные данные и настройки.
 
+4. Запустите контейнеры:
+```
+docker-compose -f docker-compose.development.yml up -d
+```
+
+### Локальная установка
+
+1. Клонируйте репозиторий:
+```
+git clone https://github.com/your-username/shopping-bot.git
+cd shopping-bot
+```
+
+2. Установите зависимости:
+```
+npm install
+```
+
+3. Создайте и настройте .env файл:
+```
+cp .env.example .env
+```
+
+4. Запустите бот:
 ```
 npm start
 ```
 
-For development with auto-restart:
+## Настройка
 
+### Конфигурация магазинов
+
+Настройка магазинов производится в файле `config/default.js`. Вы можете добавить новые магазины по образцу существующих.
+
+### Добавление товаров для мониторинга
+
+В файле `config/default.js` найдите раздел `targetItems` и добавьте товары по образцу:
+
+```javascript
+{
+  shop: 'Zara', // Название магазина
+  name: 'Название товара', // Для отображения в уведомлениях
+  productId: 'path/to/product', // Путь к товару после домена
+  sizes: ['XS', 'S', 'M'], // Интересующие размеры
+  maxPrice: 1500, // Максимальная цена
+  autoPurchase: false // Автоматическая покупка (не реализовано)
+}
 ```
-npm run dev
-```
 
-## AI Analysis
+### Расписание проверок
 
-The bot uses OpenAI's Vision API to analyze screenshots of product pages. This approach is more reliable than HTML parsing, as it can handle changes in the website structure.
+Расписание проверок настраивается через переменную `CHECK_INTERVAL` в .env файле. Используется формат CRON.
 
-If the OpenAI API key is not configured, the bot will fall back to traditional HTML parsing.
+Примеры:
+- `*/30 * * * *` - каждые 30 минут
+- `0 */4 * * *` - каждые 4 часа (в 0:00, 4:00, 8:00 и т.д.)
+- `0 8,20 * * *` - два раза в день (в 8:00 и 20:00)
 
-## Screenshots
+## Решение проблем
 
-Screenshots are saved in the `screenshots` directory with timestamps and descriptive names. These screenshots are used for AI analysis and debugging.
+### Timeout Connection
 
-## Logs
+Если бот получает ошибки типа "connection timeout", это может быть связано с защитой сайта от ботов. Попробуйте следующие решения:
 
-Logs are saved in the `logs` directory:
-- `combined.log`: All logs
-- `error.log`: Error logs only
+1. Увеличьте интервал между проверками в .env файле
+2. Настройте использование прокси (см. proxy-installation.md)
+3. Проверьте наличие Chrome в контейнере Docker
 
-## Extending
+### Ошибки авторизации электронной почты
 
-### Adding New Stores
+Если вы видите ошибки авторизации почты, убедитесь, что:
 
-To add support for a new store:
+1. Вы указали правильные учетные данные в .env файле
+2. Для Gmail: включен доступ для менее защищенных приложений или использован аппаратный ключ
 
-1. Add the store configuration to `config/default.js`
-2. The AI analysis should work automatically for most stores
+## Безопасность
 
-### Implementing Auto-Purchase
+- Не публикуйте ваш .env файл или учетные данные
+- Рекомендуется использовать отдельный email для работы бота
+- Соблюдайте ограничения сайтов на частоту запросов
 
-The auto-purchase functionality is prepared but not implemented. To implement it:
-
-1. Create a new service in `src/services/purchaseService.js`
-2. Implement the purchase flow for each supported store
-3. Call the purchase service from the monitoring service when a product is available
-
-## License
+## Лицензия
 
 MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
