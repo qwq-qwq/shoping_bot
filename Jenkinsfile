@@ -75,6 +75,7 @@ pipeline {
         stage('Prepare Deployment') {
               steps {
                    sh "mkdir -p ${env.APP_DIR}/config ${env.APP_DIR}/logs ${env.APP_DIR}/screenshots ${env.APP_DIR}/nginx/conf.d"
+                   sh "mkdir -p ${env.APP_DIR}/html ${env.APP_DIR}/src"
 
                    // Копируем конфигурации nginx
                    sh "cp -r nginx/conf.d/* ${env.APP_DIR}/nginx/conf.d/"
