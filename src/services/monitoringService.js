@@ -147,6 +147,10 @@ async function monitorProducts() {
         }
       
       // Сохраняем статус продукта для веб-интерфейса
+      // Добавляем URL товара для перехода по ссылке
+      const shopConfig = config.shops.find(s => s.name === item.shop);
+      const productUrl = `${shopConfig.url}/${item.productId}`;
+      
       productStatuses.push({
         name: item.name,
         shop: item.shop,
@@ -156,7 +160,8 @@ async function monitorProducts() {
         price: result ? result.price : null,
         availableSizes: result && result.availableSizes ? result.availableSizes : [],
         error: result ? result.error : 'Failed to check product',
-        lastChecked: new Date().toISOString()
+        lastChecked: new Date().toISOString(),
+        productUrl: productUrl // Добавляем URL товара
       });
       
       if (result && result.available) {
@@ -190,7 +195,8 @@ async function monitorProducts() {
           try {
             await webService.addWebNotification(
               `Товар доступен: ${item.name} (${item.shop})`,
-              `Доступен товар "${item.name}" в магазине ${item.shop} по цене ${result.price} в размерах: ${result.availableSizes.join(', ')}`
+              `Доступен товар "${item.name}" в магазине ${item.shop} по цене ${result.price} в размерах: ${result.availableSizes.join(', ')}
+              <br><a href="${productUrl}" target="_blank">Открыть страницу товара</a>`
             );
           } catch (webError) {
             logger.error(`Failed to add web notification: ${webError.message}`);

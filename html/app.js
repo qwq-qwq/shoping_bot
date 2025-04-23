@@ -68,13 +68,22 @@ function updateProductsList(products) {
     const statusClass = product.available ? 'status-available' : 'status-unavailable';
     const statusText = product.available ? 'Доступен' : 'Недоступен';
     
+    // Добавляем причину недоступности, если товар недоступен
+    const reasonText = (!product.available && product.error) ? 
+      `<br><small class="text-muted">${escapeHtml(product.error)}</small>` : '';
+    
+    // Добавляем ссылку на товар, если она есть
+    const nameCell = product.productUrl ? 
+      `<a href="${escapeHtml(product.productUrl)}" target="_blank">${escapeHtml(product.name)}</a>` : 
+      escapeHtml(product.name);
+    
     html += `
       <tr>
-        <td>${escapeHtml(product.name)}</td>
+        <td>${nameCell}</td>
         <td>${escapeHtml(product.shop)}</td>
         <td>${escapeHtml(product.sizes.join(', '))}</td>
         <td>${escapeHtml(product.maxPrice.toString())}</td>
-        <td class="${statusClass}">${statusText}</td>
+        <td class="${statusClass}">${statusText}${reasonText}</td>
       </tr>
     `;
   });
@@ -99,13 +108,14 @@ function updateNotifications(notifications) {
   notifications.forEach(notification => {
     const time = new Date(notification.timestamp);
     
+    // Используем innerHTML для поддержки HTML в сообщениях (ссылки и т.д.)
     html += `
       <div class="list-group-item list-group-item-action">
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">${escapeHtml(notification.title)}</h5>
           <small>${formatDate(time)}</small>
         </div>
-        <p class="mb-1">${escapeHtml(notification.message)}</p>
+        <div class="mb-1">${notification.message}</div>
       </div>
     `;
   });

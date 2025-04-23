@@ -24,6 +24,27 @@
         .status-unavailable {
             color: red;
         }
+        /* Добавляем стили для ссылок и причин недоступности */
+        .status-unavailable small {
+            color: #6c757d;
+            font-size: 0.85em;
+            display: block;
+            margin-top: 4px;
+        }
+        td a {
+            text-decoration: none;
+            color: #0d6efd;
+        }
+        td a:hover {
+            text-decoration: underline;
+        }
+        #notifications a {
+            text-decoration: none;
+            color: #0d6efd;
+        }
+        #notifications a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -53,7 +74,7 @@
                                 <th>Магазин</th>
                                 <th>Размеры</th>
                                 <th>Макс. цена</th>
-                                <th>Статус</th>
+                                <th style="min-width: 200px;">Статус</th>
                             </tr>
                         </thead>
                         <tbody id="products-list">

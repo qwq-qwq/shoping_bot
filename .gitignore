@@ -83,3 +83,4 @@ dist
 .vscode/
 *.swp
 *.swo 
+/chrome-user-data/
