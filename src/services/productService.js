@@ -107,6 +107,7 @@ async function checkProductAvailability(browser, item) {
       available: aiAnalysisResult.available,
       price: aiAnalysisResult.price,
       availableSizes: aiAnalysisResult.availableSizes || [],
+      error: aiAnalysisResult.error,
       aiAnalysis: true
     };
   } catch (error) {
