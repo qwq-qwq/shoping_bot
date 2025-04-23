@@ -34,15 +34,20 @@ async function loadProxies() {
     const lines = content.split('\n').filter(line => line.trim());
     
     const proxies = lines.map(line => {
-      const parts = line.trim().split('@');
+      const parts = line.trim().split(' ');
       
       if (parts.length === 2) {
-        // Формат с авторизацией: username:password@host:port
-        const [auth, host] = parts;
+        // Формат: ip:port username:password (ProxySeller format)
+        const [hostPart, authPart] = parts;
+        const [username, password] = authPart.split(':');
+        return { host: hostPart, username, password };
+      } else if (line.includes('@')) {
+        // Стандартный формат: username:password@host:port
+        const [auth, host] = line.split('@');
         const [username, password] = auth.split(':');
         return { host, username, password };
       } else {
-        // Формат без авторизации: host:port
+        // Просто адрес: host:port
         return { host: line.trim() };
       }
     });
@@ -82,24 +87,26 @@ async function applyProxy(options) {
     return options;
   }
   
-  logger.info(`Using proxy: ${proxy.host}`);
+  // Log using masked password for security
+  const maskedPassword = proxy.password ? '********' : 'none';
+  logger.info(`Using proxy: ${proxy.host} with auth: ${proxy.username || 'none'}:${maskedPassword}`);
   
   const args = options.args || [];
   
   // Добавляем аргумент прокси
   args.push(`--proxy-server=${proxy.host}`);
   
-  // Применяем авторизацию, если есть
-  if (proxy.username && proxy.password) {
-    options.proxyAuthCredentials = {
-      username: proxy.username,
-      password: proxy.password
-    };
-  }
-  
+  // Для ProxySeller и подобных прокси нужен другой способ аутентификации
+  // Возвращаем обновленные опции
   return {
     ...options,
-    args
+    args,
+    // Используем интерфейс аутентификации Puppeteer для передачи учетных данных
+    // когда прокси запросит аутентификацию
+    authenticate: proxy.username && proxy.password ? {
+      username: proxy.username,
+      password: proxy.password
+    } : undefined
   };
 }
 

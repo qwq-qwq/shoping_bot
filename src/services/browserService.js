@@ -41,6 +41,17 @@ async function launchBrowser() {
     // Запускаем браузер с подготовленными опциями
     const browser = await puppeteer.launch(launchOptions);
     
+    // Настраиваем обработчик запросов аутентификации для прокси
+    if (launchOptions.authenticate) {
+      const pages = await browser.pages();
+      const page = pages[0];
+      
+      // Устанавливаем обработчик для запросов аутентификации
+      await page.authenticate(launchOptions.authenticate);
+      
+      logger.info('Proxy authentication handler set up');
+    }
+    
     // Запускаем таймер для обнаружения зависаний
     const timeoutId = setTimeout(() => {
       try {

@@ -3,8 +3,6 @@ const logger = require('../utils/logger');
 const { acceptCookies } = require('./browserService');
 const { saveScreenshot } = require('./screenshotService');
 const { analyzeScreenshot } = require('./aiAnalysisService');
-// Более простая версия антидетект функций
-const { randomDelay } = require('../utils/antiDetectionUtils');
 
 /**
  * Checks availability of a product
@@ -21,6 +19,10 @@ async function checkProductAvailability(browser, item) {
   }
   
   const page = await browser.newPage();
+  
+  // Применяем аутентификацию прокси к новой странице
+  const { setupProxyAuthForPage } = require('../utils/proxyAuthUtils');
+  await setupProxyAuthForPage(browser, page);
   
   // Применяем антидетект настройки с меньшим количеством Javascript
   await page.evaluateOnNewDocument(() => {

@@ -13,6 +13,10 @@ const logger = require('./logger');
 async function checkSiteAvailability(browser, shopUrl, shopName) {
   const page = await browser.newPage();
   
+  // Применяем аутентификацию прокси к новой странице
+  const { setupProxyAuthForPage } = require('./proxyAuthUtils');
+  await setupProxyAuthForPage(browser, page);
+  
   try {
     // Устанавливаем базовый user-agent
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36');
@@ -79,7 +83,7 @@ async function checkSiteAvailability(browser, shopUrl, shopName) {
     }
     
     // Проверяем, похожа ли страница на настоящую главную страницу магазина
-    const isRealPage = await page.evaluate((name) => {
+    const isRealPage = await page.evaluate(() => {
       // Проверяем наличие элементов, которые обычно есть на главной странице магазина
       const hasLogo = !!document.querySelector('header img') || 
                      !!document.querySelector('.logo') || 
