@@ -88,6 +88,8 @@ async function checkSiteAvailability(browser, shopUrl, shopName) {
       const hasLogo = !!document.querySelector('header img') || 
                      !!document.querySelector('.logo') || 
                      !!document.querySelector('[class*="logo"]');
+
+      const logoForm =  !!document.querySelector('[class*="logo-form"]')
                      
       const hasMenu = !!document.querySelector('nav') || 
                     !!document.querySelector('menu') || 
@@ -97,8 +99,8 @@ async function checkSiteAvailability(browser, shopUrl, shopName) {
                          !!document.querySelector('[class*="search"]');
       
       return {
-        isReal: hasLogo && (hasMenu || hasSearchBox),
-        elements: { hasLogo, hasMenu, hasSearchBox }
+        isReal: hasLogo && (hasMenu || hasSearchBox) || logoForm,
+        elements: { hasLogo, hasMenu, hasSearchBox, logoForm }
       };
     }, shopName);
     

@@ -13,26 +13,53 @@ async function launchBrowser() {
   logger.info('Launching browser...');
   
   try {
-    // Базовые опции запуска браузера
+    // Базовые опции запуска браузера с оптимизированными настройками
     let launchOptions = { 
       headless: config.browser.headless, 
-      defaultViewport: { width: 1920, height: 1080 },
+      defaultViewport: { width: 1280, height: 800 }, 
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
         '--disable-gpu',
-        '--window-size=1920,1080',
+        '--disable-extensions',
+        '--disable-component-extensions-with-background-pages',
+        '--disable-default-apps',
+        '--mute-audio',
+        '--no-default-browser-check',
+        '--window-size=1280,800',
         `--user-agent=${getRandomUserAgent()}`,
         '--disable-features=IsolateOrigins,site-per-process',
         '--disable-web-security',
         '--disable-site-isolation-trials',
-        '--lang=ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+        '--lang=ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+        '--js-flags=--max_old_space_size=512',
+        '--proxy-bypass-list=<-loopback>',
+        // // Дополнительные аргументы для улучшения работы с прокси
+        // '--disable-features=NetworkService',
+        // '--enable-features=NetworkServiceInProcess',
+        // '--disable-blink-features=AutomationControlled',
+        // '--enable-logging',
+        // '--log-level=0',
+        // '--disable-sync',
+        // '--metrics-recording-only',
+        // '--disable-hang-monitor',
+        // '--disable-breakpad',
+        // '--disable-infobars',
+        // '--disable-notifications',
+        // '--disable-print-preview',
+        // '--disable-speech-api',
+        // '--no-first-run',
+        // '--use-fake-ui-for-media-stream',
+        // '--use-mock-keychain'
       ],
       ignoreHTTPSErrors: true,
-      timeout: 120000,
-      protocolTimeout: 300000 // Увеличиваем до 5 минут
+      timeout:
+       180000,
+      protocolTimeout: 480000, // 8 минут
+      // Добавляем необходимые настройки для предотвращения обнаружения автоматизации
+      userDataDir: './chrome-user-data'
     };
     
     // Применяем прокси, если нужно
@@ -41,15 +68,39 @@ async function launchBrowser() {
     // Запускаем браузер с подготовленными опциями
     const browser = await puppeteer.launch(launchOptions);
     
-    // Настраиваем обработчик запросов аутентификации для прокси
-    if (launchOptions.authenticate) {
-      const pages = await browser.pages();
-      const page = pages[0];
+    // Логируем информацию о прокси, если он был применен
+    if (launchOptions._proxyInfo) {
+      logger.info(`Browser started with proxy: ${launchOptions._proxyInfo.url}`);
+      logger.info(`Proxy protocol: ${launchOptions._proxyInfo.protocol}, Host: ${launchOptions._proxyInfo.host}:${launchOptions._proxyInfo.port}`);
       
-      // Устанавливаем обработчик для запросов аутентификации
-      await page.authenticate(launchOptions.authenticate);
+      // Сохраняем опции запуска как свойство браузера для доступа к ним из других функций
+      browser._options = launchOptions;
       
-      logger.info('Proxy authentication handler set up');
+      // Для прокси с аутентификацией, настраиваем её для всех текущих страниц
+      if (launchOptions.authenticate) {
+        try {
+          // Получаем все открытые страницы
+          const pages = await browser.pages();
+          
+          // Применяем аутентификацию к каждой странице
+          for (const page of pages) {
+            await page.authenticate(launchOptions.authenticate);
+            
+            // Добавляем антиобнаружение
+            await page.evaluateOnNewDocument(() => {
+              Object.defineProperty(navigator, 'webdriver', { get: () => false });
+              
+              // Подменяем userAgent 
+              const newUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36';
+              Object.defineProperty(navigator, 'userAgent', { get: () => newUserAgent });
+            });
+          }
+          
+          logger.info(`Proxy authentication set up for ${pages.length} page(s)`);
+        } catch (authError) {
+          logger.error(`Error setting up proxy authentication: ${authError.message}`);
+        }
+      }
     }
     
     // Запускаем таймер для обнаружения зависаний
