@@ -12,13 +12,13 @@ const proxyListPath = path.join(process.cwd(), 'config', 'proxies.txt');
 // Список прокси-серверов по умолчанию
 const defaultProxies = [
   // Добавим прямо здесь наш прокси для гарантии
-  {
-    protocol: 'http',
-    host: '95.134.185.52',
-    port: '50100',
-    username: 'sergey0rAy5',
-    password: 'EHuowDxffu'
-  }
+  // {
+  //   protocol: 'http',
+  //   host: '',
+  //   port: '50100',
+  //   username: '',
+  //   password: ''
+  // }
 ];
 
 /**

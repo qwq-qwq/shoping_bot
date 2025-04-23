@@ -27,7 +27,7 @@ async function analyzeScreenshot(screenshotPath, item) {
     // Prepare the prompt for the AI
     const prompt = `Analyze this screenshot of a product page from an online store.
 1. Is the product available for purchase?
-2. What sizes are available? Available sizes font should be darker. The target sizes I'm looking for are: ${item.sizes.join(', ')}
+2. What sizes are available? The target sizes I'm looking for are: ${item.sizes.join(', ')}
 3. What is the price of the product biggest font on top of the page in UAH?
 4. Are there any "out of stock" or "not available" messages?
 
