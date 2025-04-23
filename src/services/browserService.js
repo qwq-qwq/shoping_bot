@@ -3,7 +3,7 @@ const config = require('../../config/default');
 const logger = require('../utils/logger');
 // Используем упрощенную версию
 const { getRandomUserAgent } = require('../utils/antiDetectionUtils.simple');
-// const { applyProxy } = require('../utils/rotateProxy'); // Раскомментировать, если нужны прокси
+const { applyProxy } = require('../utils/rotateProxy'); // Раскомментировать, если нужны прокси
 
 /**
  * Launches a Puppeteer browser instance
@@ -36,7 +36,7 @@ async function launchBrowser() {
     };
     
     // Применяем прокси, если нужно
-    // launchOptions = await applyProxy(launchOptions);
+    launchOptions = await applyProxy(launchOptions);
     
     // Запускаем браузер с подготовленными опциями
     const browser = await puppeteer.launch(launchOptions);
