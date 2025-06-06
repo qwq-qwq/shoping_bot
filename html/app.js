@@ -44,8 +44,8 @@ function updateInterface(data) {
   // Обновляем список товаров
   updateProductsList(data.products);
   
-  // Обновляем список уведомлений
-  updateNotifications(data.notifications);
+  // Обновляем логи
+  updateLogs();
   
   // Обновляем скриншоты
   updateScreenshots();
@@ -92,35 +92,51 @@ function updateProductsList(products) {
 }
 
 /**
- * Обновляет список уведомлений
- * @param {Array} notifications - Массив уведомлений
+ * Обновляет отображение логов
  */
-function updateNotifications(notifications) {
-  const notificationsContainer = document.getElementById('notifications');
-  
-  if (!notifications || notifications.length === 0) {
-    notificationsContainer.innerHTML = '<div class="list-group-item">Нет уведомлений</div>';
-    return;
-  }
-  
-  let html = '';
-  
-  notifications.forEach(notification => {
-    const time = new Date(notification.timestamp);
-    
-    // Используем innerHTML для поддержки HTML в сообщениях (ссылки и т.д.)
-    html += `
-      <div class="list-group-item list-group-item-action">
-        <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1">${escapeHtml(notification.title)}</h5>
-          <small>${formatDate(time)}</small>
-        </div>
-        <div class="mb-1">${notification.message}</div>
-      </div>
-    `;
-  });
-  
-  notificationsContainer.innerHTML = html;
+function updateLogs() {
+  fetch('logs/combined.log')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Логи недоступны');
+      }
+      return response.text();
+    })
+    .then(logContent => {
+      const logsContainer = document.getElementById('logs');
+      
+      if (!logContent.trim()) {
+        logsContainer.innerHTML = '<p class="text-muted">Логи отсутствуют</p>';
+        return;
+      }
+      
+      // Разбиваем логи на строки и берем последние 100 записей
+      const logLines = logContent.trim().split('\n');
+      const recentLogs = logLines.slice(-100);
+      
+      // Форматируем логи с подсветкой уровней
+      const formattedLogs = recentLogs.map(line => {
+        let className = '';
+        if (line.includes('ERROR')) {
+          className = 'text-danger';
+        } else if (line.includes('WARN')) {
+          className = 'text-warning';
+        } else if (line.includes('INFO')) {
+          className = 'text-info';
+        }
+        
+        return `<div class="${className}">${escapeHtml(line)}</div>`;
+      }).join('');
+      
+      logsContainer.innerHTML = formattedLogs;
+      
+      // Автоматически скроллим вниз к последним записям
+      logsContainer.scrollTop = logsContainer.scrollHeight;
+    })
+    .catch(error => {
+      console.error('Ошибка загрузки логов:', error);
+      document.getElementById('logs').innerHTML = '<p class="text-muted">Логи недоступны</p>';
+    });
 }
 
 /**
@@ -169,13 +185,22 @@ function updateScreenshotsUI(screenshots) {
   
   productScreenshots.forEach(screenshot => {
     const productName = extractProductNameFromFilename(screenshot.filename);
+    // Исправляем кодировку имени товара
+    let decodedProductName;
+    try {
+      // Пытаемся декодировать URL-кодировку
+      decodedProductName = decodeURIComponent(productName);
+    } catch (e) {
+      // Если не получается, используем как есть
+      decodedProductName = productName;
+    }
     html += `
       <div class="mb-3">
-        <h6 class="screenshot-title">${escapeHtml(productName)}</h6>
+        <h6 class="screenshot-title">${escapeHtml(decodedProductName)}</h6>
         <small class="text-muted">Последний скриншот: ${formatDate(screenshot.date)}</small>
         <br>
         <a href="screenshots/${escapeHtml(screenshot.filename)}" target="_blank">
-          <img src="screenshots/${escapeHtml(screenshot.filename)}" class="product-screenshot" alt="Скриншот товара ${escapeHtml(productName)}">
+          <img src="screenshots/${escapeHtml(screenshot.filename)}" class="product-screenshot" alt="Скриншот товара ${escapeHtml(decodedProductName)}">
         </a>
       </div>
     `;

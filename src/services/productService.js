@@ -5,6 +5,30 @@ const { saveScreenshot } = require('./screenshotService');
 const { analyzeScreenshot } = require('./aiAnalysisService');
 
 /**
+ * Транслитерирует кириллический текст в латиницу для использования в именах файлов
+ * @param {string} text - Исходный текст
+ * @returns {string} Транслитерированный текст
+ */
+function transliterate(text) {
+  const ru = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+  const en = "ABVGDEEZhZIYKLMNOPRSTUFHCChShSchYEYuYaabvgdeezhziyklmnoprstufhcchshschyeyuya";
+  
+  let result = '';
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const index = ru.indexOf(char);
+    if (index !== -1) {
+      result += en[index];
+    } else {
+      result += char;
+    }
+  }
+  
+  // Заменяем пробелы и специальные символы на дефисы
+  return result.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+/**
  * Checks availability of a product
  * @param {import('puppeteer').Browser} browser - Puppeteer browser instance
  * @param {Object} item - Product item configuration
@@ -74,7 +98,7 @@ async function checkProductAvailability(browser, item) {
     });
     
     // Take a screenshot of the page for AI analysis
-    const screenshotPath = await saveScreenshot(page, `page-loaded-${item.name}`);
+    const screenshotPath = await saveScreenshot(page, `page-loaded-${transliterate(item.name)}`);
     
     // Check if product page loaded correctly
     const isProductPage = await page.evaluate(() => {
@@ -130,7 +154,7 @@ async function checkProductAvailability(browser, item) {
     return finalResult;
   } catch (error) {
     logger.error(`Error checking product ${item.name}: ${error.message}`);
-    await saveScreenshot(page, `error-${item.name}`);
+    await saveScreenshot(page, `error-${transliterate(item.name)}`);
     return { available: false, error: error.message };
   } finally {
     await page.close();
@@ -247,7 +271,7 @@ async function traditionalHtmlParsing(page, item) {
     
     if (!price) {
       logger.error(`Could not determine price for ${item.name}`);
-      await saveScreenshot(page, `price-not-found-${item.name}`);
+      await saveScreenshot(page, `price-not-found-${transliterate(item.name)}`);
       return { available: false, error: 'Price not determined' };
     }
     
@@ -488,7 +512,7 @@ async function traditionalHtmlParsing(page, item) {
     const isAvailable = availabilityResult.globallyAvailable && availableSizes.length > 0;
     
     if (isAvailable) {
-      await saveScreenshot(page, `available-${item.name}`);
+      await saveScreenshot(page, `available-${transliterate(item.name)}`);
       logger.info(`Product ${item.name} is AVAILABLE in sizes: ${availableSizes.join(', ')}`);
     } else {
       if (!availabilityResult.globallyAvailable) {

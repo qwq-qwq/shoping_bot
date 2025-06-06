@@ -33,6 +33,7 @@ services:
       - shopping-bot_logs:/var/log/nginx
       - ./screenshots:/usr/share/nginx/html/screenshots:ro
       - ./status:/usr/share/nginx/html/status
+      - ./logs:/usr/share/nginx/html/logs:ro
     networks:
       - traefik_web-network
     labels:
