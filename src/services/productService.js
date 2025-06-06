@@ -96,20 +96,38 @@ async function checkProductAvailability(browser, item) {
     // Use AI to analyze the screenshot
     const aiAnalysisResult = await analyzeScreenshot(screenshotPath, item);
     
-    // If AI analysis failed, fall back to traditional HTML parsing
+    // Also run HTML parsing as backup/verification
+    const htmlAnalysisResult = await traditionalHtmlParsing(page, item);
+    
+    // If AI analysis failed, fall back to HTML parsing
     if (aiAnalysisResult.error && aiAnalysisResult.error.includes('AI analysis failed')) {
-      logger.warn(`AI analysis failed for ${item.name}, falling back to HTML parsing`);
-      return await traditionalHtmlParsing(page, item);
+      logger.warn(`AI analysis failed for ${item.name}, using HTML parsing result`);
+      return htmlAnalysisResult;
     }
     
-    // Return the AI analysis result
-    return {
+    // Log both results for comparison
+    logger.info(`AI analysis: available=${aiAnalysisResult.available}, sizes=[${aiAnalysisResult.availableSizes}]`);
+    logger.info(`HTML analysis: available=${htmlAnalysisResult.available}, sizes=[${htmlAnalysisResult.availableSizes}]`);
+    
+    // Prefer AI analysis but cross-check with HTML parsing
+    const finalResult = {
       available: aiAnalysisResult.available,
-      price: aiAnalysisResult.price,
+      price: aiAnalysisResult.price || htmlAnalysisResult.price,
       availableSizes: aiAnalysisResult.availableSizes || [],
       error: aiAnalysisResult.error,
-      aiAnalysis: true
+      aiAnalysis: true,
+      htmlBackup: {
+        available: htmlAnalysisResult.available,
+        availableSizes: htmlAnalysisResult.availableSizes
+      }
     };
+    
+    // If AI found no available sizes but HTML found some, log a warning
+    if (!aiAnalysisResult.available && htmlAnalysisResult.available) {
+      logger.warn(`AI analysis says not available but HTML parsing says available for ${item.name}`);
+    }
+    
+    return finalResult;
   } catch (error) {
     logger.error(`Error checking product ${item.name}: ${error.message}`);
     await saveScreenshot(page, `error-${item.name}`);
@@ -192,7 +210,22 @@ async function traditionalHtmlParsing(page, item) {
       }
       
       // Clean up the price string and convert to number
-      const cleanPrice = match[1].replace(/\s/g, '').replace(',', '.');
+      // Handle both comma and dot as decimal separators
+      let cleanPrice = match[1].replace(/\s/g, '');
+      
+      // If it's a price with thousands separator (e.g. "14,250" or "14.250")
+      // and more than 3 digits, treat the comma/dot as thousands separator
+      if (cleanPrice.length > 3 && (cleanPrice.includes(',') || cleanPrice.includes('.'))) {
+        if (cleanPrice.includes(',')) {
+          cleanPrice = cleanPrice.replace(',', '');
+        } else {
+          cleanPrice = cleanPrice.replace('.', '');
+        }
+      } else {
+        // For prices like "14,99" or "14.99", treat as decimal separator
+        cleanPrice = cleanPrice.replace(',', '.');
+      }
+      
       const price = parseFloat(cleanPrice);
       
       return { 
@@ -247,14 +280,16 @@ async function traditionalHtmlParsing(page, item) {
       
       // First, try to find all size elements using various selectors
       const allPossibleSizeSelectors = [
-        // New format from the latest screenshot
-        '.size-selector-sizes__size button[data-qa-action="size-in-stock"]',
-        '.size-selector-sizes-size.button',
+        // New format from the latest screenshot - all size elements
+        '.size-selector-sizes__size button',
+        '.size-selector-sizes__size',
+        '.size-selector-sizes-size',
         'button.size-selector-sizes-size_button',
         // Simple text sizes (as seen in the left side of the screenshot)
+        '.product-detail-info_size-selector span',
         '.product-detail-info_size-selector',
         // Previous formats
-        '.new-size-selector button[data-qa-action="size-in-stock"]',
+        '.new-size-selector button',
         '.size-selector__size-list li', 
         '.product-size-info .size-list button',
         '.product-detail-size-selector-std__wrapper button',
@@ -341,11 +376,24 @@ async function traditionalHtmlParsing(page, item) {
                                      (element.parentElement.classList.contains('size-selector-sizes-size--enabled') ||
                                       !element.parentElement.classList.contains('disabled'));
         
+        // Check for "i" icon next to size (indicates unavailability)
+        const hasInfoIcon = !!element.querySelector('i') || 
+                           !!element.querySelector('.icon-info') ||
+                           !!element.parentElement?.querySelector('i') ||
+                           (element.nextElementSibling && element.nextElementSibling.textContent.includes('i'));
+        
+        debug.hasInfoIcon = hasInfoIcon;
+        
         // Check if size is available based on various indicators
         let isAvailable = true;
         
+        // First check for "i" icon which is a strong indicator of unavailability
+        if (hasInfoIcon) {
+          isAvailable = false;
+          debug.reason = 'has-info-icon';
+        }
         // For simple text sizes (as in the left side of the screenshot), assume they're available
-        if (usedSelector === 'simple-text-sizes') {
+        else if (usedSelector === 'simple-text-sizes') {
           // For simple text sizes, we assume they're available unless they have a disabled class
           isAvailable = !element.classList.contains('disabled') && 
                         !element.hasAttribute('disabled') &&
@@ -399,12 +447,23 @@ async function traditionalHtmlParsing(page, item) {
         };
       });
       
-      // Filter to only available target sizes
+      // Filter to only available target sizes and remove duplicates
       const availableSizes = sizes.filter(size => size.isTarget && size.available);
+      
+      // Remove duplicate sizes by creating a unique set
+      const uniqueAvailableSizes = [];
+      const seenSizes = new Set();
+      
+      for (const sizeObj of availableSizes) {
+        if (!seenSizes.has(sizeObj.size)) {
+          seenSizes.add(sizeObj.size);
+          uniqueAvailableSizes.push(sizeObj);
+        }
+      }
       
       return {
         globallyAvailable: true,
-        availableSizes: availableSizes,
+        availableSizes: uniqueAvailableSizes,
         debug: {
           usedSelector,
           allSizes: sizes.map(s => ({ 

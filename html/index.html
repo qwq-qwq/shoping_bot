@@ -45,6 +45,17 @@
         #notifications a:hover {
             text-decoration: underline;
         }
+        .screenshot-title {
+            color: #495057;
+            margin-bottom: 0.25rem;
+        }
+        #screenshots .mb-3 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+        }
+        #screenshots .mb-3:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -111,23 +122,8 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Информация</h5>
-                        <p class="card-text">Этот бот автоматически проверяет наличие товаров в онлайн-магазинах и отправляет уведомления, когда товары становятся доступными.</p>
-                        <h6>Функции:</h6>
-                        <ul>
-                            <li>Мониторинг наличия товаров</li>
-                            <li>Проверка цен</li>
-                            <li>Проверка доступности размеров</li>
-                            <li>Email-уведомления</li>
-                            <li>Анализ скриншотов с помощью ИИ</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="card mt-4">
-                    <div class="card-body">
                         <h5 class="card-title">Последние скриншоты</h5>
-                        <p class="card-text">Здесь будут отображаться последние скриншоты проверенных товаров.</p>
+                        <p class="card-text">Последние скриншоты проверенных товаров с AI-анализом.</p>
                         <div id="screenshots">
                             <p>Скриншоты пока отсутствуют.</p>
                         </div>

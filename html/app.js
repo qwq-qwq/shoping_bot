@@ -162,20 +162,74 @@ function updateScreenshotsUI(screenshots) {
     return;
   }
   
+  // Группируем скриншоты по товарам и берем последний для каждого товара
+  const productScreenshots = getLatestScreenshotPerProduct(screenshots);
+  
   let html = '';
   
-  // Берем только первые 5 скриншотов
-  screenshots.slice(0, 5).forEach(screenshot => {
+  productScreenshots.forEach(screenshot => {
+    const productName = extractProductNameFromFilename(screenshot.filename);
     html += `
       <div class="mb-3">
-        <a href="screenshots/${escapeHtml(screenshot)}" target="_blank">
-          <img src="screenshots/${escapeHtml(screenshot)}" class="product-screenshot" alt="Скриншот товара">
+        <h6 class="screenshot-title">${escapeHtml(productName)}</h6>
+        <small class="text-muted">Последний скриншот: ${formatDate(screenshot.date)}</small>
+        <br>
+        <a href="screenshots/${escapeHtml(screenshot.filename)}" target="_blank">
+          <img src="screenshots/${escapeHtml(screenshot.filename)}" class="product-screenshot" alt="Скриншот товара ${escapeHtml(productName)}">
         </a>
       </div>
     `;
   });
   
   screenshotsContainer.innerHTML = html;
+}
+
+/**
+ * Извлекает имя товара из имени файла скриншота
+ * @param {string} filename - Имя файла скриншота
+ * @returns {string} Имя товара
+ */
+function extractProductNameFromFilename(filename) {
+  // Формат файлов: page-loaded-Кожаная куртка-1749241662109.png
+  // available-Кожаная куртка-1749241668384.png
+  // error-Кожаная куртка-timestamp.png
+  
+  const match = filename.match(/^(page-loaded|available|error)-(.+)-\d+\.png$/);
+  if (match) {
+    return match[2]; // Извлекаем имя товара
+  }
+  
+  // Если формат не соответствует ожидаемому, возвращаем имя файла
+  return filename.replace('.png', '');
+}
+
+/**
+ * Группирует скриншоты по товарам и возвращает последний скриншот для каждого товара
+ * @param {Array} screenshots - Массив имен файлов скриншотов
+ * @returns {Array} Массив объектов с последними скриншотами для каждого товара
+ */
+function getLatestScreenshotPerProduct(screenshots) {
+  const productGroups = {};
+  
+  screenshots.forEach(filename => {
+    const productName = extractProductNameFromFilename(filename);
+    
+    // Извлекаем timestamp из имени файла
+    const timestampMatch = filename.match(/-(\d+)\.png$/);
+    const timestamp = timestampMatch ? parseInt(timestampMatch[1]) : 0;
+    
+    if (!productGroups[productName] || productGroups[productName].timestamp < timestamp) {
+      productGroups[productName] = {
+        filename: filename,
+        timestamp: timestamp,
+        date: new Date(timestamp),
+        productName: productName
+      };
+    }
+  });
+  
+  // Сортируем по времени создания (новые сверху)
+  return Object.values(productGroups).sort((a, b) => b.timestamp - a.timestamp);
 }
 
 /**

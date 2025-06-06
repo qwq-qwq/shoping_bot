@@ -1,0 +1,52 @@
+{
+  "lastCheck": "2025-04-23T11:29:31.190Z",
+  "botStatus": "running",
+  "products": [
+    {
+      "name": "Кожаная куртка",
+      "shop": "Massimo Dutti",
+      "sizes": [
+        "XXL"
+      ],
+      "maxPrice": 15000,
+      "available": false,
+      "price": null,
+      "availableSizes": [],
+      "error": "Магазин недоступен: Ошибка при проверке: net::ERR_TIMED_OUT at https://www.massimodutti.com",
+      "lastChecked": "2025-04-23T11:29:29.803Z"
+    },
+    {
+      "name": "Пиджак из текстиля",
+      "shop": "Massimo Dutti",
+      "sizes": [
+        "58"
+      ],
+      "maxPrice": 5000,
+      "available": false,
+      "price": null,
+      "availableSizes": [],
+      "error": "Магазин недоступен: Ошибка при проверке: net::ERR_TIMED_OUT at https://www.massimodutti.com",
+      "lastChecked": "2025-04-23T11:29:29.803Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": 1745407535886,
+      "title": "Товар доступен: Кожаная куртка (Massimo Dutti)",
+      "message": "Доступен товар \"Кожаная куртка\" в магазине Massimo Dutti по цене 13990 в размерах: L, XL",
+      "timestamp": "2025-04-23T11:25:35.886Z"
+    },
+    {
+      "id": 1745407325878,
+      "title": "Товар доступен: Кожаная куртка (Massimo Dutti)",
+      "message": "Доступен товар \"Кожаная куртка\" в магазине Massimo Dutti по цене 13990 в размерах: XXL",
+      "timestamp": "2025-04-23T11:22:05.878Z"
+    },
+    {
+      "id": 1745406157079,
+      "title": "Товар доступен: Кожаная куртка (Massimo Dutti)",
+      "message": "Доступен товар \"Кожаная куртка\" в магазине Massimo Dutti по цене 13990 в размерах: XXL",
+      "timestamp": "2025-04-23T11:02:37.079Z"
+    }
+  ]
+}

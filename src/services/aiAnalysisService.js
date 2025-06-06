@@ -25,18 +25,25 @@ async function analyzeScreenshot(screenshotPath, item) {
     const imageBuffer = await fs.readFile(screenshotPath);
     
     // Prepare the prompt for the AI
-    const prompt = `Analyze this screenshot of a product page from an online store.
+    const prompt = `Analyze this screenshot of a product page from an online store and pay special attention to size availability.
+
+IMPORTANT: Look carefully at the size selection area. Available sizes are clickable buttons/text WITHOUT any crossed-out lines, "i" symbols in boxes, grayed-out appearance, or disabled state.
+
 1. Is the product available for purchase?
-2. What sizes are available? The target sizes I'm looking for are: ${item.sizes.join(', ')}
-3. What is the price of the product biggest font on top of the page in UAH?
-4. Are there any "out of stock" or "not available" messages?
+2. SIZE ANALYSIS - Look for size buttons/text that show: ${item.sizes.join(', ')}
+   - AVAILABLE sizes: clear, clickable, normal color, no "i" symbol in a box next to them
+   - UNAVAILABLE sizes: crossed out, grayed out, have "i" symbol in a box, or appear disabled
+   - Only list sizes that are clearly AVAILABLE (clickable and not disabled)
+3. What is the price shown on the page in UAH (Ukrainian Hryvnia)?
+4. Are there any "out of stock", "not available", or similar messages?
 
 Please respond in JSON format with the following structure:
 {
   "available": true/false,
-  "availableSizes": ["size1", "size2", ...],
+  "availableSizes": ["only sizes that are clearly available/clickable"],
   "price": number,
-  "outOfStockMessage": "text of any out of stock message or null if none"
+  "outOfStockMessage": "text of any out of stock message or null if none",
+  "sizeAnalysisDetails": "brief description of what you see in the size selection area"
 }`;
     
 
@@ -129,7 +136,15 @@ Please respond in JSON format with the following structure:
       analysisResult.error = 'No available sizes match target sizes';
     }
     
+    // Log the complete AI response for debugging
+    logger.info(`Complete AI response for ${item.name}: ${aiResponse}`);
     logger.info(`AI analysis result for ${item.name}: ${JSON.stringify(analysisResult)}`);
+    
+    // Log size analysis details if available
+    if (analysisResult.sizeAnalysisDetails) {
+      logger.info(`Size analysis details: ${analysisResult.sizeAnalysisDetails}`);
+    }
+    
     return analysisResult;
   } catch (error) {
     logger.error(`Error analyzing screenshot: ${error.message}`);

@@ -72,7 +72,7 @@ module.exports = {
     password: process.env.EMAIL_PASSWORD
   },
   // Check interval
-  checkInterval: process.env.CHECK_INTERVAL || '*/30 * * * *', // Every 30 minutes by default
+  checkInterval: process.env.CHECK_INTERVAL || '0 */2 * * *', // Every 2 hours by default
   // Browser settings
   browser: {
     headless: process.env.HEADLESS === 'true'
