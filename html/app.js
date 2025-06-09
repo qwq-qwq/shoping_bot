@@ -10,7 +10,14 @@ document.addEventListener('DOMContentLoaded', function() {
  * Загружает данные о статусе бота и обновляет интерфейс
  */
 function loadStatus() {
-  fetch('status/status.json?' + new Date().getTime())
+  fetch('status/status.json?' + new Date().getTime(), {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  })
     .then(response => {
       if (!response.ok) {
         throw new Error('Статус недоступен');
@@ -95,7 +102,14 @@ function updateProductsList(products) {
  * Обновляет отображение логов
  */
 function updateLogs() {
-  fetch('logs/combined.log')
+  fetch('logs/combined.log?' + new Date().getTime(), {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  })
     .then(response => {
       if (!response.ok) {
         throw new Error('Логи недоступны');
@@ -143,7 +157,14 @@ function updateLogs() {
  * Обновляет скриншоты
  */
 function updateScreenshots() {
-  fetch('screenshots/')
+  fetch('screenshots/?' + new Date().getTime(), {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  })
     .then(response => {
       if (!response.ok) {
         throw new Error('Скриншоты недоступны');
