@@ -25,26 +25,41 @@ async function analyzeScreenshot(screenshotPath, item) {
     const imageBuffer = await fs.readFile(screenshotPath);
     
     // Prepare the prompt for the AI
-    const prompt = `Analyze this screenshot of a product page from an online store and pay special attention to size availability.
+    const prompt = `Analyze this screenshot of a product page from an online store. Focus ONLY on sizes that are clearly available for purchase.
 
-IMPORTANT: Look carefully at the size selection area. Available sizes are clickable buttons/text WITHOUT any crossed-out lines, "i" symbols in boxes, grayed-out appearance, or disabled state.
+CRITICAL SIZE AVAILABILITY RULES:
+1. UNAVAILABLE sizes have an "i" symbol in a small box/square next to them
+2. UNAVAILABLE sizes appear grayed out, faded, or disabled
+3. UNAVAILABLE sizes have strikethrough lines
+4. AVAILABLE sizes are clear, bold, clickable WITHOUT any symbols or indicators
 
-1. Is the product available for purchase?
-2. SIZE ANALYSIS - Look for size buttons/text that show: ${item.sizes.join(', ')}
-   - AVAILABLE sizes: clear, clickable, normal color, no "i" symbol in a box next to them
-   - UNAVAILABLE sizes: crossed out, grayed out, have "i" symbol in a box, or appear disabled
-   - Only list sizes that are clearly AVAILABLE (clickable and not disabled)
-3. What is the price shown on the page in UAH (Ukrainian Hryvnia)?
-4. Are there any "out of stock", "not available", or similar messages?
+EXAMPLE: In this image, if you see sizes like "XL [i]" or "XXL [i]" - these are NOT available.
 
-Please respond in JSON format with the following structure:
+Look for:
+- Product name (usually at the top)
+- Price in local currency (грн)
+- Size selection area (usually shows S, M, L, XL, XXL)
+- Out of stock messages in Ukrainian/Russian
+
+TARGET SIZES TO CHECK: ${item.sizes.join(', ')}
+
+ANALYZE EACH SIZE INDIVIDUALLY:
+- S: available or not? Why?
+- M: available or not? Why?
+- L: available or not? Why?
+- XL: available or not? Why?
+- XXL: available or not? Why?
+
+Return JSON:
 {
-  "available": true/false,
-  "availableSizes": ["only sizes that are clearly available/clickable"],
+  "available": boolean,
+  "availableSizes": ["only_clearly_available_sizes"],
   "price": number,
-  "outOfStockMessage": "text of any out of stock message or null if none",
-  "sizeAnalysisDetails": "brief description of what you see in the size selection area"
-}`;
+  "outOfStockMessage": "any message about stock",
+  "sizeAnalysisDetails": "explain what you see for each size: S - [status and reason], M - [status and reason], L - [status and reason], XL - [status and reason], XXL - [status and reason]"
+}
+
+Be VERY strict - if there's ANY indicator (i, graying, etc.) next to a size, it's NOT available.`;
     
 
     // Make the API request
