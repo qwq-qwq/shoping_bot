@@ -2,12 +2,18 @@
 
 pipeline {
     agent any
+
+    triggers {
+        // Запуск каждые 3 дня в 02:00
+        cron('0 2 */3 * *')
+    }
     
     parameters {
-        choice(name: 'ENVIRONMENT', choices: ['development', 'staging', 'production'], description: 'Среда развертывания')
-        booleanParam(name: 'CLEANUP_IMAGES', defaultValue: false, description: 'Очистить неиспользуемые Docker-образы')
+        choice(name: 'ENVIRONMENT', choices: ['auto', 'development', 'staging', 'production'], description: 'Среда развертывания (auto - автоматическое определение)')
+        booleanParam(name: 'CLEANUP_IMAGES', defaultValue: true, description: 'Очистить неиспользуемые Docker-образы')
         string(name: 'DOMAIN_NAME', defaultValue: 'shopping-bot.perek.rest', description: 'Доменное имя для доступа к боту')
         booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Пропустить тесты')
+        booleanParam(name: 'FORCE_REBUILD', defaultValue: true, description: 'Принудительная пересборка контейнеров')
     }
 
     environment {
@@ -26,20 +32,42 @@ pipeline {
             }
         }
         
-        stage('Validate Configuration') {
+        stage('Determine Environment') {
             steps {
                 script {
+                    // Автоматическое определение окружения если выбран 'auto'
+                    if (params.ENVIRONMENT == 'auto') {
+                        def runningContainers = sh(
+                            script: "docker ps --format 'table {{.Names}}' | grep shopping-bot || true",
+                            returnStdout: true
+                        ).trim()
+                        
+                        if (runningContainers.contains('shopping-bot-prod')) {
+                            env.DETECTED_ENVIRONMENT = 'production'
+                            echo "Автоматически определено production окружение"
+                        } else if (runningContainers.contains('shopping-bot-dev')) {
+                            env.DETECTED_ENVIRONMENT = 'development'
+                            echo "Автоматически определено development окружение"
+                        } else {
+                            env.DETECTED_ENVIRONMENT = 'development'
+                            echo "Контейнеры не найдены, используется development по умолчанию"
+                        }
+                    } else {
+                        env.DETECTED_ENVIRONMENT = params.ENVIRONMENT
+                        echo "Используется заданное окружение: ${params.ENVIRONMENT}"
+                    }
+                    
                     // Проверяем наличие необходимых файлов
-                    if (!fileExists("docker-compose.${params.ENVIRONMENT}.yml")) {
-                        error 'docker-compose.${params.ENVIRONMENT}.yml not found!'
+                    if (!fileExists("docker-compose.${env.DETECTED_ENVIRONMENT}.yml")) {
+                        error "docker-compose.${env.DETECTED_ENVIRONMENT}.yml not found!"
                     }
 
                     // Проверяем настройки для указанной среды
-                    if (params.ENVIRONMENT != 'development' && !fileExists("config/${params.ENVIRONMENT}.js")) {
-                        error "Configuration for ${params.ENVIRONMENT} environment not found!"
+                    if (env.DETECTED_ENVIRONMENT != 'development' && !fileExists("config/${env.DETECTED_ENVIRONMENT}.js")) {
+                        error "Configuration for ${env.DETECTED_ENVIRONMENT} environment not found!"
                     }
 
-                    echo 'Configuration validation completed'
+                    echo "Configuration validation completed for ${env.DETECTED_ENVIRONMENT}"
                 }
             }
         }
@@ -62,9 +90,9 @@ pipeline {
 
                 // Копируем соответствующий docker-compose файл, если он существует
                 script {
-                    if (fileExists("docker-compose.${params.ENVIRONMENT}.yml")) {
-                        sh "cp docker-compose.${params.ENVIRONMENT}.yml docker-compose.yml"
-                        echo "Using ${params.ENVIRONMENT} specific docker-compose file"
+                    if (fileExists("docker-compose.${env.DETECTED_ENVIRONMENT}.yml")) {
+                        sh "cp docker-compose.${env.DETECTED_ENVIRONMENT}.yml docker-compose.yml"
+                        echo "Using ${env.DETECTED_ENVIRONMENT} specific docker-compose file"
                     }
                 }
                 
@@ -100,6 +128,17 @@ pipeline {
                     // Останавливаем предыдущие контейнеры если они есть
                     sh 'docker-compose down || true'
 
+                    // Если включена принудительная пересборка, очищаем образы
+                    script {
+                        if (params.FORCE_REBUILD) {
+                            echo "Принудительная пересборка: очистка образов..."
+                            sh 'docker image prune -f'
+                            sh 'docker-compose build --no-cache'
+                        } else {
+                            sh 'docker-compose build'
+                        }
+                    }
+
                     // Обновляем версию образа в docker-compose.yml
                     sh "sed -i 's|image: ${env.APP_NAME}:[^[:space:]]*|image: ${env.APP_NAME}:${env.BUILD_NUMBER}|g' docker-compose.yml"
 
@@ -131,9 +170,9 @@ pipeline {
 
                     // Дополнительные команды для разных сред
                     script {
-                       if (params.ENVIRONMENT == 'production') {
+                       if (env.DETECTED_ENVIRONMENT == 'production') {
                             echo "Deployed to production environment at https://${params.DOMAIN_NAME}"
-                       } else if (params.ENVIRONMENT == 'staging') {
+                       } else if (env.DETECTED_ENVIRONMENT == 'staging') {
                             echo "Deployed to staging environment at https://${params.DOMAIN_NAME}"
                        } else {
                             echo "Deployed to development environment at https://${params.DOMAIN_NAME}"
@@ -174,7 +213,9 @@ pipeline {
                     echo 'Remove .env'
                     sh 'rm -f .env'
                     echo 'Cleaning up unused Docker images...'
+                    sh 'docker image prune -f'
                     sh 'docker system prune -f --volumes'
+                    sh 'docker builder prune -f'
                     echo 'Cleanup completed'
                 }
             }
@@ -191,7 +232,7 @@ pipeline {
             echo "Web interface available at: https://${params.DOMAIN_NAME}"
 
             // Отправка уведомления об успешном деплое
-            // mail to: 'team@example.com', subject: "Shopping Bot deployed to ${params.ENVIRONMENT}"
+            mail to: 'sergey@perek.rest', subject: "Shopping Bot deployed to ${env.DETECTED_ENVIRONMENT}"
         }
         failure {
             echo '''
@@ -204,7 +245,7 @@ pipeline {
             sh 'docker-compose down || true'
 
             // Отправка уведомления о неудачном деплое
-            // mail to: 'team@example.com', subject: "FAILED: Shopping Bot deployment to ${params.ENVIRONMENT}"
+            mail to: 'sergey@perek.rest', subject: "FAILED: Shopping Bot deployment to ${env.DETECTED_ENVIRONMENT}"
         }
         always {
             // Архивируем логи
