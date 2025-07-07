@@ -232,7 +232,7 @@ pipeline {
             echo "Web interface available at: https://${params.DOMAIN_NAME}"
 
             // Отправка уведомления об успешном деплое
-            mail to: 'sergey@perek.rest', subject: "Shopping Bot deployed to ${env.DETECTED_ENVIRONMENT}"
+            // mail to: 'sergey@perek.rest', subject: "Shopping Bot deployed to ${env.DETECTED_ENVIRONMENT}"
         }
         failure {
             echo '''
@@ -245,7 +245,7 @@ pipeline {
             sh 'docker-compose down || true'
 
             // Отправка уведомления о неудачном деплое
-            mail to: 'sergey@perek.rest', subject: "FAILED: Shopping Bot deployment to ${env.DETECTED_ENVIRONMENT}"
+            // mail to: 'sergey@perek.rest', subject: "FAILED: Shopping Bot deployment to ${env.DETECTED_ENVIRONMENT}"
         }
         always {
             // Архивируем логи
