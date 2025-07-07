@@ -59,7 +59,7 @@ module.exports = {
       shop: 'Massimo Dutti',
       name: 'Пиджак из текстиля',
       productId: 'ua/textured-linen-blend-blazer-l02032279?pelement=48134930',
-      sizes: ['58'],
+      sizes: ['52', '54', '56'],
       maxPrice: 6000,
       autoPurchase: false
     }
